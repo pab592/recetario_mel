@@ -27,6 +27,33 @@ header {
     padding: 20px;
 }
 
+button {
+    background: #ff85a2;
+    border: none;
+    padding: 8px 12px;
+    color: white;
+    border-radius: 15px;
+    cursor: pointer;
+    margin: 5px 5px 5px 0;
+}
+
+.formulario {
+    display: none;
+    background: #fff0f5;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+input, textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
 .receta {
     background: #fff0f5;
     border-radius: 15px;
@@ -38,36 +65,17 @@ header {
 .receta img {
     width: 100%;
     border-radius: 10px;
+    margin-top: 10px;
 }
 
 h2 {
     color: #ff4d88;
 }
 
-button {
-    background: #ff85a2;
-    border: none;
-    padding: 10px 15px;
-    color: white;
-    border-radius: 20px;
-    cursor: pointer;
-    margin: 10px 0;
-}
-
-.formulario {
+#mensajeGuardado {
+    color: #ff4d88;
     display: none;
-    background: #fff0f5;
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 20px;
-}
-
-input, textarea {
-    width: 100%;
     margin-bottom: 10px;
-    padding: 8px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
 }
 
 .footer {
@@ -84,7 +92,7 @@ input, textarea {
 
 <div class="container">
 
-<button onclick="toggleForm()">Agregar receta ✍️</button>
+<button onclick="nuevaReceta()">Agregar receta ✍️</button>
 
 <div class="formulario" id="formulario">
     <input type="text" id="titulo" placeholder="Nombre de la receta">
@@ -94,6 +102,9 @@ input, textarea {
     <button onclick="guardarReceta()">Guardar 💕</button>
 </div>
 
+<p id="mensajeGuardado">Guardado con éxito 💕</p>
+
+<h2>📖 Recetas guardadas</h2>
 <div id="recetas"></div>
 
 </div>
@@ -101,9 +112,16 @@ input, textarea {
 <div class="footer">Hecho con amor para Mel 💕</div>
 
 <script>
-function toggleForm() {
-    const form = document.getElementById("formulario");
-    form.style.display = form.style.display === "none" ? "block" : "none";
+let editIndex = null;
+
+function nuevaReceta() {
+    editIndex = null;
+    document.getElementById("formulario").style.display = "block";
+
+    document.getElementById("titulo").value = "";
+    document.getElementById("ingredientes").value = "";
+    document.getElementById("pasos").value = "";
+    document.getElementById("imagen").value = "";
 }
 
 function guardarReceta() {
@@ -112,25 +130,42 @@ function guardarReceta() {
     const pasos = document.getElementById("pasos").value;
     const imagenInput = document.getElementById("imagen");
 
-    const reader = new FileReader();
+    if (!titulo || !ingredientes || !pasos) {
+        alert("Completa todos los campos 💕");
+        return;
+    }
 
-    reader.onload = function () {
-        const receta = {
-            titulo,
-            ingredientes,
-            pasos,
-            imagen: reader.result
-        };
+    let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
-        let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
-        recetas.push(receta);
+    function guardarFinal(imagenBase64) {
+        const receta = { titulo, ingredientes, pasos, imagen: imagenBase64 };
+
+        if (editIndex !== null) {
+            recetas[editIndex] = receta;
+        } else {
+            recetas.push(receta);
+        }
+
         localStorage.setItem("recetas", JSON.stringify(recetas));
-
         mostrarRecetas();
-    };
+
+        document.getElementById("mensajeGuardado").style.display = "block";
+        setTimeout(() => {
+            document.getElementById("mensajeGuardado").style.display = "none";
+        }, 2000);
+
+        document.getElementById("formulario").style.display = "none";
+    }
 
     if (imagenInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function () {
+            guardarFinal(reader.result);
+        };
         reader.readAsDataURL(imagenInput.files[0]);
+    } else {
+        const imagenActual = editIndex !== null ? recetas[editIndex].imagen : "";
+        guardarFinal(imagenActual);
     }
 }
 
@@ -138,9 +173,9 @@ function mostrarRecetas() {
     const contenedor = document.getElementById("recetas");
     contenedor.innerHTML = "";
 
-    const recetas = JSON.parse(localStorage.getItem("recetas")) || [];
+    let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
-    recetas.forEach(receta => {
+    recetas.forEach((receta, index) => {
         const div = document.createElement("div");
         div.classList.add("receta");
 
@@ -149,10 +184,32 @@ function mostrarRecetas() {
             <p><strong>Ingredientes:</strong> ${receta.ingredientes}</p>
             <p><strong>Pasos:</strong> ${receta.pasos}</p>
             <img src="${receta.imagen}">
+            <br>
+            <button onclick="editarReceta(${index})">Editar ✏️</button>
+            <button onclick="eliminarReceta(${index})">Eliminar 🗑️</button>
         `;
 
         contenedor.appendChild(div);
     });
+}
+
+function eliminarReceta(index) {
+    let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
+    recetas.splice(index, 1);
+    localStorage.setItem("recetas", JSON.stringify(recetas));
+    mostrarRecetas();
+}
+
+function editarReceta(index) {
+    let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
+    const receta = recetas[index];
+
+    document.getElementById("titulo").value = receta.titulo;
+    document.getElementById("ingredientes").value = receta.ingredientes;
+    document.getElementById("pasos").value = receta.pasos;
+
+    document.getElementById("formulario").style.display = "block";
+    editIndex = index;
 }
 
 mostrarRecetas();
