@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recetario de Mel 💕</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #ffe4ec;
+}
+
+header {
+    text-align: center;
+    padding: 30px;
+    background: #ffb6c1;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+.receta {
+    background: #fff0f5;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.receta img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+h2 {
+    color: #ff4d88;
+}
+
+button {
+    background: #ff85a2;
+    border: none;
+    padding: 10px 15px;
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+.formulario {
+    display: none;
+    background: #fff0f5;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+input, textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+</style>
+</head>
+
+<body>
+
+<header>Recetario de Mel 💕</header>
+
+<div class="container">
+
+<button onclick="toggleForm()">Agregar receta ✍️</button>
+
+<div class="formulario" id="formulario">
+    <input type="text" id="titulo" placeholder="Nombre de la receta">
+    <textarea id="ingredientes" placeholder="Ingredientes (separados por coma)"></textarea>
+    <textarea id="pasos" placeholder="Pasos"></textarea>
+    <input type="file" id="imagen">
+    <button onclick="guardarReceta()">Guardar 💕</button>
+</div>
+
+<div id="recetas"></div>
+
+</div>
+
+<div class="footer">Hecho con amor para Mel 💕</div>
+
+<script>
+function toggleForm() {
+    const form = document.getElementById("formulario");
+    form.style.display = form.style.display === "none" ? "block" : "none";
+}
+
+function guardarReceta() {
+    const titulo = document.getElementById("titulo").value;
+    const ingredientes = document.getElementById("ingredientes").value;
+    const pasos = document.getElementById("pasos").value;
+    const imagenInput = document.getElementById("imagen");
+
+    const reader = new FileReader();
+
+    reader.onload = function () {
+        const receta = {
+            titulo,
+            ingredientes,
+            pasos,
+            imagen: reader.result
+        };
+
+        let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
+        recetas.push(receta);
+        localStorage.setItem("recetas", JSON.stringify(recetas));
+
+        mostrarRecetas();
+    };
+
+    if (imagenInput.files[0]) {
+        reader.readAsDataURL(imagenInput.files[0]);
+    }
+}
+
+function mostrarRecetas() {
+    const contenedor = document.getElementById("recetas");
+    contenedor.innerHTML = "";
+
+    const recetas = JSON.parse(localStorage.getItem("recetas")) || [];
+
+    recetas.forEach(receta => {
+        const div = document.createElement("div");
+        div.classList.add("receta");
+
+        div.innerHTML = `
+            <h2>${receta.titulo}</h2>
+            <p><strong>Ingredientes:</strong> ${receta.ingredientes}</p>
+            <p><strong>Pasos:</strong> ${receta.pasos}</p>
+            <img src="${receta.imagen}">
+        `;
+
+        contenedor.appendChild(div);
+    });
+}
+
+mostrarRecetas();
+</script>
+
+</body>
+</html>
