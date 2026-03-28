@@ -1,3 +1,4 @@
+
 body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
@@ -29,6 +30,10 @@ button {
     margin: 5px 5px 5px 0;
 }
 
+button:hover {
+    opacity: 0.9;
+}
+
 .formulario {
     display: none;
     background: #fff0f5;
@@ -38,12 +43,13 @@ button {
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-input, textarea {
+input, textarea, select {
     width: 100%;
     margin-bottom: 10px;
     padding: 8px;
     border-radius: 10px;
     border: 1px solid #ccc;
+    font-family: 'Segoe UI', sans-serif;
 }
 
 .receta {
@@ -55,7 +61,7 @@ input, textarea {
 }
 
 .receta img {
-    width:  100%;
+    width: 100%;
     border-radius: 10px;
     margin-top: 10px;
 }
@@ -70,8 +76,39 @@ h2 {
     margin-bottom: 10px;
 }
 
+.tools {
+    background: #fff0f5;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.tools label {
+    font-weight: bold;
+    color: #ff4d88;
+}
+
+.fecha {
+    font-size: 13px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.favorito {
+    font-size: 18px;
+}
+
+.contador {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #ff4d88;
+}
+
 .footer {
     text-align: center;
     padding: 20px;
     color: #888;
 }
+
+

@@ -87,6 +87,7 @@ function guardarReceta() {
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
     function guardarFinal(imagenBase64) {
+        const ahora = new Date();
 
         if (editId !== null) {
             const index = recetas.findIndex(r => r.id === editId);
@@ -96,7 +97,8 @@ function guardarReceta() {
                 recetas[index].ingredientes = ingredientes;
                 recetas[index].pasos = pasos;
                 recetas[index].imagen = imagenBase64;
-                recetas[index].fecha = new Date().toLocaleString();
+                recetas[index].fechaTexto = ahora.toLocaleString();
+                recetas[index].fechaTimestamp = ahora.getTime();
             }
         } else {
             const receta = {
@@ -106,7 +108,8 @@ function guardarReceta() {
                 pasos: pasos,
                 imagen: imagenBase64,
                 favorito: false,
-                fecha: new Date().toLocaleString()
+                fechaTexto: ahora.toLocaleString(),
+                fechaTimestamp: ahora.getTime()
             };
             recetas.push(receta);
         }
@@ -180,22 +183,19 @@ function mostrarRecetas() {
     const textoBusqueda = document.getElementById("buscador").value.toLowerCase();
     const orden = document.getElementById("orden").value;
 
-    // FILTRAR POR BUSCADOR
     recetas = recetas.filter(r =>
         r.titulo.toLowerCase().includes(textoBusqueda) ||
         r.ingredientes.toLowerCase().includes(textoBusqueda)
     );
 
-    // FILTRAR FAVORITOS
     if (soloFavoritos) {
         recetas = recetas.filter(r => r.favorito === true);
     }
 
-    // ORDENAR
     if (orden === "nuevas") {
-        recetas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        recetas.sort((a, b) => b.fechaTimestamp - a.fechaTimestamp);
     } else {
-        recetas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        recetas.sort((a, b) => a.fechaTimestamp - b.fechaTimestamp);
     }
 
     actualizarContador(recetas.length);
@@ -218,7 +218,7 @@ function mostrarRecetas() {
             <p><strong>Pasos:</strong> ${receta.pasos}</p>
             <img src="${receta.imagen}" alt="Imagen receta">
 
-            <p class="fecha">📅 Guardado: ${receta.fecha}</p>
+            <p class="fecha">📅 Guardado: ${receta.fechaTexto}</p>
 
             <br>
             <button onclick="editarReceta('${receta.id}')">Editar ✏️</button>
