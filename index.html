@@ -21,10 +21,27 @@
     <textarea id="ingredientes" placeholder="Ingredientes (separados por coma)"></textarea>
     <textarea id="pasos" placeholder="Pasos"></textarea>
     <input type="file" id="imagen">
-    <button onclick="guardarReceta()">Guardar 💕</button>
+    <button id="btnGuardar" onclick="guardarReceta()">Guardar 💕</button>
 </div>
 
-<p id="mensajeGuardado">Guardado con éxito 💕</p>
+<p id="mensajeGuardado">Guardado con éxito amor de mi vida 💕</p>
+
+<div class="tools">
+    <label>🔍 Buscar receta:</label>
+
+    <div style="display:flex; gap:10px; align-items:center;">
+        <input type="text" id="buscador" placeholder="Ejemplo: hotcakes..." onkeypress="enterBuscar(event)">
+        <button onclick="buscarRecetas()">Buscar 🔍</button>
+    </div>
+
+    <label>📅 Ordenar por:</label>
+    <select id="orden" onchange="mostrarRecetas()">
+        <option value="nuevas">Más nuevas primero</option>
+        <option value="viejas">Más viejas primero</option>
+    </select>
+
+    <button onclick="toggleFavoritos()">⭐ Ver solo favoritos</button>
+</div>
 
 <h2>📖 Recetas guardadas</h2>
 <div id="recetas"></div>
@@ -35,32 +52,42 @@
 
 <script>
 let editIndex = null;
+let soloFavoritos = false;
 
 function nuevaReceta() {
     editIndex = null;
-    document.getElementById("formulario").style.display = "block";
 
     document.getElementById("titulo").value = "";
     document.getElementById("ingredientes").value = "";
     document.getElementById("pasos").value = "";
     document.getElementById("imagen").value = "";
+
+    document.getElementById("btnGuardar").textContent = "Guardar 💕";
+    document.getElementById("formulario").style.display = "block";
 }
 
 function guardarReceta() {
-    const titulo = document.getElementById("titulo").value;
-    const ingredientes = document.getElementById("ingredientes").value;
-    const pasos = document.getElementById("pasos").value;
+    const titulo = document.getElementById("titulo").value.trim();
+    const ingredientes = document.getElementById("ingredientes").value.trim();
+    const pasos = document.getElementById("pasos").value.trim();
     const imagenInput = document.getElementById("imagen");
 
     if (!titulo || !ingredientes || !pasos) {
-        alert("Completa todos los campos 💕");
+        alert("Completa todos los campos mi niña 💕");
         return;
     }
 
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
     function guardarFinal(imagenBase64) {
-        const receta = { titulo, ingredientes, pasos, imagen: imagenBase64 };
+        const receta = {
+            titulo: titulo,
+            ingredientes: ingredientes,
+            pasos: pasos,
+            imagen: imagenBase64,
+            favorito: editIndex !== null ? recetas[editIndex].favorito : false,
+            fecha: new Date().toLocaleString()
+        };
 
         if (editIndex !== null) {
             recetas[editIndex] = receta;
@@ -77,17 +104,31 @@ function guardarReceta() {
         }, 2000);
 
         document.getElementById("formulario").style.display = "none";
+        editIndex = null;
     }
 
-    if (imagenInput.files[0]) {
+    if (imagenInput.files.length > 0) {
         const reader = new FileReader();
         reader.onload = function () {
             guardarFinal(reader.result);
         };
         reader.readAsDataURL(imagenInput.files[0]);
     } else {
-        const imagenActual = editIndex !== null ? recetas[editIndex].imagen : "";
-        guardarFinal(imagenActual);
+        if (editIndex !== null && recetas[editIndex]) {
+            guardarFinal(recetas[editIndex].imagen);
+        } else {
+            alert("Princesa, por favor agrega una imagen 🥺");
+        }
+    }
+}
+
+function buscarRecetas() {
+    mostrarRecetas();
+}
+
+function enterBuscar(event) {
+    if (event.key === "Enter") {
+        mostrarRecetas();
     }
 }
 
@@ -97,18 +138,51 @@ function mostrarRecetas() {
 
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
-    recetas.forEach((receta, index) => {
+    const textoBusqueda = document.getElementById("buscador").value.toLowerCase();
+    const orden = document.getElementById("orden").value;
+
+    recetas = recetas.filter(r =>
+        r.titulo.toLowerCase().includes(textoBusqueda) ||
+        r.ingredientes.toLowerCase().includes(textoBusqueda)
+    );
+
+    if (soloFavoritos) {
+        recetas = recetas.filter(r => r.favorito === true);
+    }
+
+    if (orden === "nuevas") {
+        recetas = recetas.reverse();
+    }
+
+    if (recetas.length === 0) {
+        contenedor.innerHTML = "<p>Mi vida, no hay recetas para mostrar 🥺</p>";
+        return;
+    }
+
+    recetas.forEach((receta) => {
+        const recetasOriginal = JSON.parse(localStorage.getItem("recetas")) || [];
+        const indexOriginal = recetasOriginal.findIndex(r => r.titulo === receta.titulo && r.fecha === receta.fecha);
+
         const div = document.createElement("div");
         div.classList.add("receta");
 
         div.innerHTML = `
-            <h2>${receta.titulo}</h2>
+            <h2>${receta.titulo} 
+                <span class="favorito">${receta.favorito ? "⭐" : ""}</span>
+            </h2>
+
             <p><strong>Ingredientes:</strong> ${receta.ingredientes}</p>
             <p><strong>Pasos:</strong> ${receta.pasos}</p>
-            <img src="${receta.imagen}">
+            <img src="${receta.imagen}" alt="Imagen receta">
+
+            <p class="fecha">📅 Guardado: ${receta.fecha}</p>
+
             <br>
-            <button onclick="editarReceta(${index})">Editar ✏️</button>
-            <button onclick="eliminarReceta(${index})">Eliminar 🗑️</button>
+            <button onclick="editarReceta(${indexOriginal})">Editar ✏️</button>
+            <button onclick="eliminarReceta(${indexOriginal})">Eliminar 🗑️</button>
+            <button onclick="toggleFavorito(${indexOriginal})">
+                ${receta.favorito ? "Quitar ⭐" : "Favorito ⭐"}
+            </button>
         `;
 
         contenedor.appendChild(div);
@@ -117,9 +191,12 @@ function mostrarRecetas() {
 
 function eliminarReceta(index) {
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
-    recetas.splice(index, 1);
-    localStorage.setItem("recetas", JSON.stringify(recetas));
-    mostrarRecetas();
+
+    if (confirm("¿Amor segura que quieres eliminar esta receta?  🥺")) {
+        recetas.splice(index, 1);
+        localStorage.setItem("recetas", JSON.stringify(recetas));
+        mostrarRecetas();
+    }
 }
 
 function editarReceta(index) {
@@ -134,8 +211,21 @@ function editarReceta(index) {
     document.getElementById("formulario").style.display = "block";
 
     document.getElementById("btnGuardar").textContent = "Actualizar 💕";
-   
     editIndex = index;
+}
+
+function toggleFavorito(index) {
+    let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
+
+    recetas[index].favorito = !recetas[index].favorito;
+
+    localStorage.setItem("recetas", JSON.stringify(recetas));
+    mostrarRecetas();
+}
+
+function toggleFavoritos() {
+    soloFavoritos = !soloFavoritos;
+    mostrarRecetas();
 }
 
 mostrarRecetas();
