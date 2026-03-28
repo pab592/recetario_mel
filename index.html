@@ -4,8 +4,120 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recetario de Mel 💕</title>
-<link rel="stylesheet" href="styles.css">
 
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #ffe4ec;
+}
+
+header {
+    text-align: center;
+    padding: 30px;
+    background: #ffb6c1;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+button {
+    background: #ff85a2;
+    border: none;
+    padding: 8px 12px;
+    color: white;
+    border-radius: 15px;
+    cursor: pointer;
+    margin: 5px 5px 5px 0;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.formulario {
+    display: none;
+    background: #fff0f5;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+input, textarea, select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.receta {
+    background: #fff0f5;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.receta img {
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+h2 {
+    color: #ff4d88;
+}
+
+#mensajeGuardado {
+    color: #ff4d88;
+    display: none;
+    margin-bottom: 10px;
+}
+
+.tools {
+    background: #fff0f5;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.tools label {
+    font-weight: bold;
+    color: #ff4d88;
+}
+
+.fecha {
+    font-size: 13px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.favorito {
+    font-size: 18px;
+}
+
+.contador {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #ff4d88;
+}
+
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+</style>
 </head>
 
 <body>
@@ -20,7 +132,10 @@
     <input type="text" id="titulo" placeholder="Nombre de la receta">
     <textarea id="ingredientes" placeholder="Ingredientes (separados por coma)"></textarea>
     <textarea id="pasos" placeholder="Pasos"></textarea>
-    <input type="file" id="imagen">
+
+    <!-- IMPORTANTE PARA CELULAR -->
+    <input type="file" id="imagen" accept="image/*">
+
     <button id="btnGuardar" onclick="guardarReceta()">Guardar 💕</button>
 </div>
 
@@ -73,6 +188,55 @@ function nuevaReceta() {
     document.getElementById("formulario").style.display = "block";
 }
 
+/* ===============================
+   COMPRESIÓN DE IMAGEN (CELULAR)
+   =============================== */
+function comprimirImagen(file, callback) {
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        const img = new Image();
+
+        img.onload = function () {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            // Tamaño máximo recomendado (para que no pese mucho)
+            const maxWidth = 800;
+            const maxHeight = 800;
+
+            let width = img.width;
+            let height = img.height;
+
+            // Mantener proporción
+            if (width > height) {
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width *= maxHeight / height;
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convertimos a JPG comprimido (0.6 = buena calidad y peso bajo)
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.6);
+            callback(compressedBase64);
+        };
+
+        img.src = event.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
+
 function guardarReceta() {
     const titulo = document.getElementById("titulo").value.trim();
     const ingredientes = document.getElementById("ingredientes").value.trim();
@@ -111,10 +275,18 @@ function guardarReceta() {
                 fechaTexto: ahora.toLocaleString(),
                 fechaTimestamp: ahora.getTime()
             };
+
             recetas.push(receta);
         }
 
-        localStorage.setItem("recetas", JSON.stringify(recetas));
+        try {
+            localStorage.setItem("recetas", JSON.stringify(recetas));
+        } catch (error) {
+            alert("No se pudo guardar 😭. La memoria está llena. Intenta usar una imagen más pequeña o borrar recetas viejas.");
+            console.log(error);
+            return;
+        }
+
         mostrarRecetas();
 
         document.getElementById("mensajeGuardado").style.display = "block";
@@ -126,13 +298,13 @@ function guardarReceta() {
         editId = null;
     }
 
+    // SI SE SUBE IMAGEN NUEVA
     if (imagenInput.files.length > 0) {
-        const reader = new FileReader();
-        reader.onload = function () {
-            guardarFinal(reader.result);
-        };
-        reader.readAsDataURL(imagenInput.files[0]);
+        comprimirImagen(imagenInput.files[0], function (imagenComprimida) {
+            guardarFinal(imagenComprimida);
+        });
     } else {
+        // SI ESTÁ EDITANDO Y NO SUBE IMAGEN NUEVA
         if (editId !== null) {
             const recetaActual = recetas.find(r => r.id === editId);
             if (recetaActual) {
@@ -183,15 +355,18 @@ function mostrarRecetas() {
     const textoBusqueda = document.getElementById("buscador").value.toLowerCase();
     const orden = document.getElementById("orden").value;
 
+    // FILTRAR POR BUSCADOR
     recetas = recetas.filter(r =>
         r.titulo.toLowerCase().includes(textoBusqueda) ||
         r.ingredientes.toLowerCase().includes(textoBusqueda)
     );
 
+    // FILTRAR FAVORITOS
     if (soloFavoritos) {
         recetas = recetas.filter(r => r.favorito === true);
     }
 
+    // ORDENAR POR FECHA REAL
     if (orden === "nuevas") {
         recetas.sort((a, b) => b.fechaTimestamp - a.fechaTimestamp);
     } else {
@@ -256,7 +431,6 @@ function editarReceta(id) {
     document.getElementById("formulario").style.display = "block";
 
     document.getElementById("btnGuardar").textContent = "Actualizar 💕";
-
     editId = id;
 }
 
