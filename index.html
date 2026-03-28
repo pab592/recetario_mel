@@ -4,86 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recetario de Mel 💕</title>
+<link rel="stylesheet" href="styles.css">
 
-<style>
-body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: #ffe4ec;
-}
-
-header {
-    text-align: center;
-    padding: 30px;
-    background: #ffb6c1;
-    color: white;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-}
-
-button {
-    background: #ff85a2;
-    border: none;
-    padding: 8px 12px;
-    color: white;
-    border-radius: 15px;
-    cursor: pointer;
-    margin: 5px 5px 5px 0;
-}
-
-.formulario {
-    display: none;
-    background: #fff0f5;
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-input, textarea {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 8px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-}
-
-.receta {
-    background: #fff0f5;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.receta img {
-    width: 100%;
-    border-radius: 10px;
-    margin-top: 10px;
-}
-
-h2 {
-    color: #ff4d88;
-}
-
-#mensajeGuardado {
-    color: #ff4d88;
-    display: none;
-    margin-bottom: 10px;
-}
-
-.footer {
-    text-align: center;
-    padding: 20px;
-    color: #888;
-}
-</style>
 </head>
 
 <body>
@@ -210,6 +132,7 @@ function editarReceta(index) {
 
     document.getElementById("formulario").style.display = "block";
     editIndex = index;
+
 }
 
 mostrarRecetas();
