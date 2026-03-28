@@ -24,7 +24,7 @@
     <button id="btnGuardar" onclick="guardarReceta()">Guardar 💕</button>
 </div>
 
-<p id="mensajeGuardado">Guardado con éxito amor de mi vida 💕</p>
+<p id="mensajeGuardado">Guardado con éxito 💕</p>
 
 <div class="tools">
     <label>🔍 Buscar receta:</label>
@@ -32,6 +32,7 @@
     <div style="display:flex; gap:10px; align-items:center;">
         <input type="text" id="buscador" placeholder="Ejemplo: hotcakes..." onkeypress="enterBuscar(event)">
         <button onclick="buscarRecetas()">Buscar 🔍</button>
+        <button onclick="limpiarBusqueda()">Limpiar ❌</button>
     </div>
 
     <label>📅 Ordenar por:</label>
@@ -40,7 +41,9 @@
         <option value="viejas">Más viejas primero</option>
     </select>
 
-    <button onclick="toggleFavoritos()">⭐ Ver solo favoritos</button>
+    <button onclick="toggleFavoritos()" id="btnFavoritos">⭐ Ver solo favoritos</button>
+
+    <div class="contador" id="contadorRecetas"></div>
 </div>
 
 <h2>📖 Recetas guardadas</h2>
@@ -51,11 +54,15 @@
 <div class="footer">Hecho con amor para Mel 💕</div>
 
 <script>
-let editIndex = null;
+let editId = null;
 let soloFavoritos = false;
 
+function generarID() {
+    return Date.now() + Math.random().toString(16).slice(2);
+}
+
 function nuevaReceta() {
-    editIndex = null;
+    editId = null;
 
     document.getElementById("titulo").value = "";
     document.getElementById("ingredientes").value = "";
@@ -73,25 +80,34 @@ function guardarReceta() {
     const imagenInput = document.getElementById("imagen");
 
     if (!titulo || !ingredientes || !pasos) {
-        alert("Completa todos los campos mi niña 💕");
+        alert("Completa todos los campos 💕");
         return;
     }
 
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
     function guardarFinal(imagenBase64) {
-        const receta = {
-            titulo: titulo,
-            ingredientes: ingredientes,
-            pasos: pasos,
-            imagen: imagenBase64,
-            favorito: editIndex !== null ? recetas[editIndex].favorito : false,
-            fecha: new Date().toLocaleString()
-        };
 
-        if (editIndex !== null) {
-            recetas[editIndex] = receta;
+        if (editId !== null) {
+            const index = recetas.findIndex(r => r.id === editId);
+
+            if (index !== -1) {
+                recetas[index].titulo = titulo;
+                recetas[index].ingredientes = ingredientes;
+                recetas[index].pasos = pasos;
+                recetas[index].imagen = imagenBase64;
+                recetas[index].fecha = new Date().toLocaleString();
+            }
         } else {
+            const receta = {
+                id: generarID(),
+                titulo: titulo,
+                ingredientes: ingredientes,
+                pasos: pasos,
+                imagen: imagenBase64,
+                favorito: false,
+                fecha: new Date().toLocaleString()
+            };
             recetas.push(receta);
         }
 
@@ -104,7 +120,7 @@ function guardarReceta() {
         }, 2000);
 
         document.getElementById("formulario").style.display = "none";
-        editIndex = null;
+        editId = null;
     }
 
     if (imagenInput.files.length > 0) {
@@ -114,10 +130,13 @@ function guardarReceta() {
         };
         reader.readAsDataURL(imagenInput.files[0]);
     } else {
-        if (editIndex !== null && recetas[editIndex]) {
-            guardarFinal(recetas[editIndex].imagen);
+        if (editId !== null) {
+            const recetaActual = recetas.find(r => r.id === editId);
+            if (recetaActual) {
+                guardarFinal(recetaActual.imagen);
+            }
         } else {
-            alert("Princesa, por favor agrega una imagen 🥺");
+            alert("Por favor agrega una imagen 🥺");
         }
     }
 }
@@ -132,6 +151,26 @@ function enterBuscar(event) {
     }
 }
 
+function limpiarBusqueda() {
+    document.getElementById("buscador").value = "";
+    mostrarRecetas();
+}
+
+function toggleFavoritos() {
+    soloFavoritos = !soloFavoritos;
+
+    document.getElementById("btnFavoritos").textContent = soloFavoritos
+        ? "⭐ Mostrando favoritos"
+        : "⭐ Ver solo favoritos";
+
+    mostrarRecetas();
+}
+
+function actualizarContador(cantidad) {
+    document.getElementById("contadorRecetas").textContent =
+        "Total de recetas: " + cantidad;
+}
+
 function mostrarRecetas() {
     const contenedor = document.getElementById("recetas");
     contenedor.innerHTML = "";
@@ -141,28 +180,32 @@ function mostrarRecetas() {
     const textoBusqueda = document.getElementById("buscador").value.toLowerCase();
     const orden = document.getElementById("orden").value;
 
+    // FILTRAR POR BUSCADOR
     recetas = recetas.filter(r =>
         r.titulo.toLowerCase().includes(textoBusqueda) ||
         r.ingredientes.toLowerCase().includes(textoBusqueda)
     );
 
+    // FILTRAR FAVORITOS
     if (soloFavoritos) {
         recetas = recetas.filter(r => r.favorito === true);
     }
 
+    // ORDENAR
     if (orden === "nuevas") {
-        recetas = recetas.reverse();
+        recetas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    } else {
+        recetas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
     }
 
+    actualizarContador(recetas.length);
+
     if (recetas.length === 0) {
-        contenedor.innerHTML = "<p>Mi vida, no hay recetas para mostrar 🥺</p>";
+        contenedor.innerHTML = "<p>No hay recetas para mostrar 🥺</p>";
         return;
     }
 
     recetas.forEach((receta) => {
-        const recetasOriginal = JSON.parse(localStorage.getItem("recetas")) || [];
-        const indexOriginal = recetasOriginal.findIndex(r => r.titulo === receta.titulo && r.fecha === receta.fecha);
-
         const div = document.createElement("div");
         div.classList.add("receta");
 
@@ -178,9 +221,9 @@ function mostrarRecetas() {
             <p class="fecha">📅 Guardado: ${receta.fecha}</p>
 
             <br>
-            <button onclick="editarReceta(${indexOriginal})">Editar ✏️</button>
-            <button onclick="eliminarReceta(${indexOriginal})">Eliminar 🗑️</button>
-            <button onclick="toggleFavorito(${indexOriginal})">
+            <button onclick="editarReceta('${receta.id}')">Editar ✏️</button>
+            <button onclick="eliminarReceta('${receta.id}')">Eliminar 🗑️</button>
+            <button onclick="toggleFavorito('${receta.id}')">
                 ${receta.favorito ? "Quitar ⭐" : "Favorito ⭐"}
             </button>
         `;
@@ -189,19 +232,21 @@ function mostrarRecetas() {
     });
 }
 
-function eliminarReceta(index) {
+function eliminarReceta(id) {
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
-    if (confirm("¿Amor segura que quieres eliminar esta receta?  🥺")) {
-        recetas.splice(index, 1);
+    if (confirm("¿Seguro que quieres eliminar esta receta? 🥺")) {
+        recetas = recetas.filter(r => r.id !== id);
         localStorage.setItem("recetas", JSON.stringify(recetas));
         mostrarRecetas();
     }
 }
 
-function editarReceta(index) {
+function editarReceta(id) {
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
-    const receta = recetas[index];
+    const receta = recetas.find(r => r.id === id);
+
+    if (!receta) return;
 
     document.getElementById("titulo").value = receta.titulo;
     document.getElementById("ingredientes").value = receta.ingredientes;
@@ -211,20 +256,19 @@ function editarReceta(index) {
     document.getElementById("formulario").style.display = "block";
 
     document.getElementById("btnGuardar").textContent = "Actualizar 💕";
-    editIndex = index;
+
+    editId = id;
 }
 
-function toggleFavorito(index) {
+function toggleFavorito(id) {
     let recetas = JSON.parse(localStorage.getItem("recetas")) || [];
 
-    recetas[index].favorito = !recetas[index].favorito;
+    const index = recetas.findIndex(r => r.id === id);
+    if (index !== -1) {
+        recetas[index].favorito = !recetas[index].favorito;
+    }
 
     localStorage.setItem("recetas", JSON.stringify(recetas));
-    mostrarRecetas();
-}
-
-function toggleFavoritos() {
-    soloFavoritos = !soloFavoritos;
     mostrarRecetas();
 }
 
