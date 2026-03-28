@@ -130,9 +130,12 @@ function editarReceta(index) {
     document.getElementById("ingredientes").value = receta.ingredientes;
     document.getElementById("pasos").value = receta.pasos;
 
+    document.getElementById("imagen").value = "";
     document.getElementById("formulario").style.display = "block";
-    editIndex = index;
 
+    document.getElementById("btnGuardar").textContent = "Actualizar 💕";
+   
+    editIndex = index;
 }
 
 mostrarRecetas();
